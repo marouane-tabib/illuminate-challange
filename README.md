@@ -1,59 +1,41 @@
-<p align="center"><a href="https://laravel.com" target="_blank"><img src="https://raw.githubusercontent.com/laravel/art/master/logo-lockup/5%20SVG/2%20CMYK/1%20Full%20Color/laravel-logolockup-cmyk-red.svg" width="400" alt="Laravel Logo"></a></p>
+# Illuminate Challenge - Stage 3: Centroid of Chaos
 
-<p align="center">
-<a href="https://github.com/laravel/framework/actions"><img src="https://github.com/laravel/framework/workflows/tests/badge.svg" alt="Build Status"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/dt/laravel/framework" alt="Total Downloads"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/v/laravel/framework" alt="Latest Stable Version"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/l/laravel/framework" alt="License"></a>
-</p>
+This project implements Stage 3 of the Bi-Tech Senior Laravel Hiring Challenge.
 
-## About Laravel
+## Data Source
 
-Laravel is a web application framework with expressive, elegant syntax. We believe development must be an enjoyable and creative experience to be truly fulfilling. Laravel takes the pain out of development by easing common tasks used in many web projects, such as:
+The data is sourced from a remote PostgreSQL repository accessed via SSH tunnel. The data includes neighborhoods with polygon boundaries and incidents with geographic coordinates.
 
-- [Simple, fast routing engine](https://laravel.com/docs/routing).
-- [Powerful dependency injection container](https://laravel.com/docs/container).
-- Multiple back-ends for [session](https://laravel.com/docs/session) and [cache](https://laravel.com/docs/cache) storage.
-- Expressive, intuitive [database ORM](https://laravel.com/docs/eloquent).
-- Database agnostic [schema migrations](https://laravel.com/docs/migrations).
-- [Robust background job processing](https://laravel.com/docs/queues).
-- [Real-time event broadcasting](https://laravel.com/docs/broadcasting).
+## Commands Available
 
-Laravel is accessible, powerful, and provides tools required for large, robust applications.
+### 1. Import Data
+```bash
+php artisan import:data
+```
+Imports neighborhoods and incidents from the remote PostgreSQL repository into the local SQLite database. This command calculates polygon centroids and handles coordinate conversion.
 
-## Learning Laravel
+### 2. Get Flag
+```bash
+php artisan flag:get
+```
+Retrieves incidents within the donut around neighborhood NB-7A2F, orders them by distance, and concatenates their codes to reveal the flag.
 
-Laravel has the most extensive and thorough [documentation](https://laravel.com/docs) and video tutorial library of all modern web application frameworks, making it a breeze to get started with the framework. You can also check out [Laravel Learn](https://laravel.com/learn), where you will be guided through building a modern Laravel application.
+## Custom Relationship
 
-If you don't feel like reading, [Laracasts](https://laracasts.com) can help. Laracasts contains thousands of video tutorials on a range of topics including Laravel, modern PHP, unit testing, and JavaScript. Boost your skills by digging into our comprehensive video library.
+The project uses a custom Eloquent relationship `DonutRelation` that extends Laravel's `Relation` class. This custom relationship filters incidents based on geographic distance from a neighborhood centroid within specified inner and outer radii.
 
-## Laravel Sponsors
+## Helper
 
-We would like to extend our thanks to the following sponsors for funding Laravel development. If you are interested in becoming a sponsor, please visit the [Laravel Partners program](https://partners.laravel.com).
+The `IncidentHelper` class provides utility functions for geographic calculations, specifically the Haversine formula for calculating distances between geographic coordinates. This helper is used as a tool during the specific use case of distance-based filtering.
 
-### Premium Partners
+## Donut Parameters
 
-- **[Vehikl](https://vehikl.com)**
-- **[Tighten Co.](https://tighten.co)**
-- **[Kirschbaum Development Group](https://kirschbaumdevelopment.com)**
-- **[64 Robots](https://64robots.com)**
-- **[Curotec](https://www.curotec.com/services/technologies/laravel)**
-- **[DevSquad](https://devsquad.com/hire-laravel-developers)**
-- **[Redberry](https://redberry.international/laravel-development)**
-- **[Active Logic](https://activelogic.com)**
+- **Target neighborhood**: NB-7A2F
+- **Inner radius**: 0.5 km
+- **Outer radius**: 2.0 km
 
-## Contributing
+## Technical Notes
 
-Thank you for considering contributing to the Laravel framework! The contribution guide can be found in the [Laravel documentation](https://laravel.com/docs/contributions).
-
-## Code of Conduct
-
-In order to ensure that the Laravel community is welcoming to all, please review and abide by the [Code of Conduct](https://laravel.com/docs/contributions#code-of-conduct).
-
-## Security Vulnerabilities
-
-If you discover a security vulnerability within Laravel, please send an e-mail to Taylor Otwell via [taylor@laravel.com](mailto:taylor@laravel.com). All security vulnerabilities will be promptly addressed.
-
-## License
-
-The Laravel framework is open-sourced software licensed under the [MIT license](https://opensource.org/licenses/MIT).
+- PostgreSQL PostGIS uses (longitude, latitude) coordinate order
+- Local SQLite database stores coordinates in (latitude, longitude) order
+- Distance calculations use the Haversine formula with Earth radius of 6371 km
