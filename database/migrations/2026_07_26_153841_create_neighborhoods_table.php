@@ -13,6 +13,9 @@ return new class extends Migration
     {
         Schema::create('neighborhoods', function (Blueprint $table) {
             $table->id();
+            $table->string('name');
+            $table->decimal('centroid_lat', 10, 7);
+            $table->decimal('centroid_lng', 10, 7);
             $table->timestamps();
         });
     }
