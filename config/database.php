@@ -99,6 +99,18 @@ return [
             'sslmode' => env('DB_SSLMODE', 'prefer'),
         ],
 
+        'pgsql_remote' => [
+            'driver' => 'pgsql',
+            'host' => env('REMOTE_DB_HOST', '127.0.0.1'),
+            'port' => env('REMOTE_DB_PORT', '5432'),
+            'database' => env('REMOTE_DB_DATABASE', 'illuminate_challenge'),
+            'username' => env('REMOTE_DB_USERNAME'),
+            'password' => env('REMOTE_DB_PASSWORD'),
+            'charset' => 'utf8',
+            'prefix' => '',
+            'schema' => 'gis_data',   // where the tables live
+        ],
+
         'sqlsrv' => [
             'driver' => 'sqlsrv',
             'url' => env('DB_URL'),
