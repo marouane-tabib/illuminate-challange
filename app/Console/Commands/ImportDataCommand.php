@@ -2,10 +2,12 @@
 
 namespace App\Console\Commands;
 
+use App\Helpers\NeighborhoodHelper;
 use App\Models\Incident;
 use App\Models\Neighborhood;
+use App\Repositories\IncidentPgRepository;
+use App\Repositories\NeighborhoodPgRepository;
 use Illuminate\Console\Command;
-use Illuminate\Support\Facades\DB;
 
 class ImportDataCommand extends Command
 {
@@ -28,14 +30,19 @@ class ImportDataCommand extends Command
      */    
     public function handle()
     {
-        // 1. Import neighborhoods – correct coordinate order
-        $neighborhoods = DB::connection('pgsql_remote')
-            ->table('gis_data.neighborhoods')
-            ->get();
-        
+        $this->importNeighborhoods();
+        $this->info('Neighborhoods imported.');
+
+        $this->importIncidents();
+        $this->info('Incidents imported.');
+    }
+
+    private function importNeighborhoods(): void
+    {
+        $neighborhoods = NeighborhoodPgRepository::all();
+
         foreach ($neighborhoods as $nb) {
-            // $nb->boundary is already a string like "((33.32,44.34),...)"
-            $centroid = $this->polygonCentroid($nb->boundary);
+            $centroid = NeighborhoodHelper::polygonCentroid($nb->boundary);
 
             Neighborhood::create([
                 'name'         => $nb->name,
@@ -43,56 +50,12 @@ class ImportDataCommand extends Command
                 'centroid_lng' => $centroid['lng'],
             ]);
         }
-
-        $this->info('Neighborhoods imported.');
-
-        // 2. Import incidents – correct: lat = location[0], lng = location[1]
-        $this->info('Fetching incidents...');
-        $incidentsData = DB::connection('pgsql_remote')
-            ->select("
-                SELECT 
-                    location[0] AS latitude,
-                    location[1] AS longitude,
-                    metadata->'incident'->>'code' AS code
-                FROM gis_data.incidents
-            ");
-
-        $this->info('Inserting ' . count($incidentsData) . ' incidents...');
-            
-        $incidentsArray = array_map(fn($row) => (array) $row, $incidentsData);
-        Incident::insert($incidentsArray);
-
-        $this->info('Incidents imported.');
     }
 
-    /**
-     * Compute centroid of polygon from text representation.
-     * Points are in (latitude, longitude) order.
-     */
-    private function polygonCentroid(string $polygonText): array
+    private function importIncidents(): void
     {
-        // Mat  ch all (lat,lng) pairs
-        preg_match_all('/\(([\d.]+),([\d.]+)\)/', $polygonText, $matches, PREG_SET_ORDER);
-        
-        if (count($matches) === 0) {
-            throw new \Exception("No vertices found in polygon: $polygonText");
-        }
-
-        $minLat = $maxLat = (float) $matches[0][1];
-        $minLng = $maxLng = (float) $matches[0][2];
-            
-        foreach ($matches as $match) {
-            $lat = (float) $match[1];
-            $lng = (float) $match[2];
-            if ($lat < $minLat) $minLat = $lat;
-            if ($lat > $maxLat) $maxLat = $lat;
-            if ($lng < $minLng) $minLng = $lng;
-            if ($lng > $maxLng) $maxLng = $lng;
-        }
-        
-        return [
-            'lat' => ($minLat + $maxLat) / 2,
-            'lng' => ($minLng + $maxLng) / 2,
-        ];
+        $incidentsData = IncidentPgRepository::all();            
+        $incidentsArray = array_map(fn($row) => (array) $row, $incidentsData);
+        Incident::insert($incidentsArray);
     }
 }
