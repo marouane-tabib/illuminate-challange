@@ -6,5 +6,6 @@ use Illuminate\Database\Eloquent\Model;
 
 class Neighborhood extends Model
 {
-    //
+    protected $fillable = ['name', 'centroid_lat', 'centroid_lng'];
+
 }
