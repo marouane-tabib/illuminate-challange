@@ -4,6 +4,7 @@ namespace App\Console\Commands;
 
 use App\Models\Neighborhood;
 use Illuminate\Console\Command;
+use Throwable;
 
 class GetFlagCommand extends Command
 {
@@ -26,11 +27,16 @@ class GetFlagCommand extends Command
      */
     public function handle()
     {
-        $neighborhood = Neighborhood::where('name', 'NB-7A2F')->firstOrFail();
-        $incidents = $neighborhood->incidents()->getResults();
+        try {
+            $neighborhood = Neighborhood::where('name', 'NB-7A2F')->firstOrFail();
+            $incidents = $neighborhood->incidents()->getResults();
 
-        $flag = $incidents->pluck('code')->implode('');
+            $flag = $incidents->pluck('code')->implode('');
 
-        $this->info("Flag: " . $flag);
+            $this->info("Flag: " . $flag);
+        } catch (Throwable $e) {
+            logger()->error('GetFlagCommand failed', ['exception' => $e]);
+            $this->fail('Failed to retrieve the flag. Check logs for details.');
+        }
     }
 }
